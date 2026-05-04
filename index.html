@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SplitEasy">
+<meta name="theme-color" content="#0d0d1a">
+<link rel="manifest" href="manifest.json">
+<title>SplitEasy</title>
+<style>
+:root{
+  --bg:#0d0d1a;--card:#161628;--card2:#1e1e35;--border:#2a2a45;
+  --text:#f0f0ff;--text2:#7777aa;--text3:#4444aa;
+  --accent:#7c6fee;--accent2:#5b4fcf;--danger:#ef4444;
+  --success:#22c55e;--warn:#f59e0b;--radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  overscroll-behavior:none}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+#header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(13,13,26,0.85);backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:16px 20px 12px;
+}
+#header h1{font-size:1.15rem;font-weight:700;letter-spacing:-0.3px}
+#header .sub{font-size:0.75rem;color:var(--text2);margin-top:2px}
+#content{flex:1;overflow-y:auto;padding:16px 16px 100px;-webkit-overflow-scrolling:touch}
+#bottom-nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  background:rgba(13,13,26,0.95);backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;justify-content:space-around;align-items:center;
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:200;
+}
+.nav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 16px;border:none;background:none;color:var(--text2);
+  cursor:pointer;font-size:0.65rem;font-weight:600;letter-spacing:0.3px;
+  text-transform:uppercase;border-radius:10px;transition:color .15s;
+  -webkit-user-select:none;user-select:none;
+}
+.nav-btn .ico{font-size:1.4rem;line-height:1}
+.nav-btn.active{color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-sm{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.row{display:flex;gap:10px;margin-bottom:12px}
+.row>.card-sm{flex:1;min-width:0}
+.label{font-size:0.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.val{font-size:1.4rem;font-weight:700;letter-spacing:-0.5px}
+.val-sm{font-size:1.1rem;font-weight:700}
+.sec-title{font-size:0.85rem;font-weight:700;color:var(--text2);text-transform:uppercase;
+  letter-spacing:0.5px;margin:20px 0 10px}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;
+  font-weight:600;padding:5px 10px;border-radius:20px;background:var(--card2)}
+.badge.danger{background:rgba(239,68,68,0.15);color:#ef4444}
+.badge.success{background:rgba(34,197,94,0.15);color:#22c55e}
+.badge.warn{background:rgba(245,158,11,0.15);color:#f59e0b}
+.badge.accent{background:rgba(124,111,238,0.2);color:var(--accent)}
+/* Buttons */
+.btn{display:block;width:100%;padding:14px;border-radius:12px;border:none;
+  font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .15s;
+  -webkit-user-select:none;user-select:none}
+.btn:active{opacity:0.75}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.btn-danger{background:rgba(239,68,68,0.15);color:#ef4444;border:1.5px solid rgba(239,68,68,0.3)}
+.btn-sm{width:auto;padding:8px 16px;font-size:0.85rem}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:8px;
+  display:inline-flex;align-items:center;justify-content:center;font-size:1rem}
+/* Forms */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:0.75rem;font-weight:600;color:var(--text2);
+  text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px}
+input,select,textarea{
+  width:100%;background:var(--card2);border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 14px;color:var(--text);font-size:1rem;
+  outline:none;-webkit-appearance:none;appearance:none;transition:border .15s;
+  font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input[type=date]{color-scheme:dark}
+select option{background:#1e1e35}
+.field-row{display:flex;gap:10px}
+.field-row .field{flex:1;min-width:0}
+/* Split buttons */
+.split-opts{display:flex;gap:8px;margin-bottom:14px}
+.split-btn{flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--card2);color:var(--text2);font-size:0.75rem;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .15s}
+.split-btn.active{border-color:var(--accent);background:rgba(124,111,238,0.15);color:var(--accent)}
+/* Txn rows */
+.txn{display:flex;align-items:center;gap:12px;padding:12px 0;
+  border-bottom:1px solid var(--border)}
+.txn:last-child{border-bottom:none}
+.txn-ico{width:40px;height:40px;border-radius:10px;background:var(--card2);
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.txn-info{flex:1;min-width:0}
+.txn-desc{font-size:0.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.txn-meta{font-size:0.72rem;color:var(--text2);margin-top:2px}
+.txn-amt{font-size:0.95rem;font-weight:700;text-align:right;flex-shrink:0}
+.txn-amt .split{font-size:0.7rem;color:var(--text2);font-weight:400}
+/* Balance */
+.owe-row{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:1px solid var(--border)}
+.owe-row:last-child{border-bottom:none}
+/* Modals */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;
+  display:none;align-items:flex-end;justify-content:center}
+#overlay.show{display:flex}
+#modal-box{
+  width:100%;max-width:480px;background:var(--card);
+  border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));
+  max-height:90vh;overflow-y:auto;
+}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border);
+  margin:0 auto 16px}
+.modal-title{font-size:1.05rem;font-weight:700;margin-bottom:16px}
+/* Toast */
+#toast-wrap{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom));
+  left:50%;transform:translateX(-50%);z-index:500;width:calc(100% - 32px);max-width:400px}
+.toast{
+  padding:12px 16px;border-radius:12px;margin-bottom:8px;
+  font-size:0.85rem;font-weight:600;text-align:center;
+  animation:slideUp .25s ease;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.toast.ok{background:rgba(34,197,94,0.9);color:#fff}
+.toast.err{background:rgba(239,68,68,0.9);color:#fff}
+.toast.info{background:rgba(124,111,238,0.9);color:#fff}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+/* Charts */
+canvas{max-width:100%}
+/* Category pills */
+.cat-pill{display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;
+  padding:4px 10px;border-radius:20px;background:var(--card2)}
+/* Progress bar */
+.progress{height:6px;border-radius:3px;background:var(--border);margin:4px 0}
+.progress-fill{height:100%;border-radius:3px;transition:width .4s}
+/* Settings list */
+.set-row{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:1px solid var(--border)}
+.set-row:last-child{border-bottom:none}
+/* Password input wrapper */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:44px}
+.pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--text2);cursor:pointer;font-size:1rem}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <h1 id="hdr-title">SplitEasy</h1>
+    <div class="sub" id="hdr-sub"></div>
+  </div>
+  <div id="content"></div>
+  <nav id="bottom-nav">
+    <button class="nav-btn active" data-page="dashboard"><span class="ico">🏠</span>Home</button>
+    <button class="nav-btn" data-page="add"><span class="ico">➕</span>Add</button>
+    <button class="nav-btn" data-page="history"><span class="ico">📋</span>History</button>
+    <button class="nav-btn" data-page="balance"><span class="ico">⚖️</span>Balance</button>
+    <button class="nav-btn" data-page="sync"><span class="ico">🔄</span>Sync</button>
+  </nav>
+</div>
+<div id="overlay"><div id="modal-box"></div></div>
+<div id="toast-wrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════
+const CATS = [
+  {e:'🍜',l:'Food & Dining',   c:'#FF6B6B'},{e:'🛒',l:'Groceries',    c:'#4ECDC4'},
+  {e:'🚌',l:'Transport',       c:'#45B7D1'},{e:'🏠',l:'Rent & Housing',c:'#96CEB4'},
+  {e:'💡',l:'Utilities',       c:'#FFEAA7'},{e:'🎬',l:'Entertainment', c:'#DDA0DD'},
+  {e:'👕',l:'Shopping',        c:'#98FB98'},{e:'💊',l:'Healthcare',    c:'#F0E68C'},
+  {e:'✈️',l:'Travel',          c:'#87CEEB'},{e:'🍺',l:'Drinks',        c:'#FFDAB9'},
+  {e:'🎁',l:'Gifts',           c:'#E6E6FA'},{e:'🏋️',l:'Fitness',      c:'#B0E0E6'},
+  {e:'💰',l:'Other',           c:'#D3D3D3'},
+];
+const catMap = Object.fromEntries(CATS.map(c=>[c.l,c]));
+const SPLITS = ['Equal','Custom %','Payer only'];
+
+// ═══════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() :
+  'xxxx-xxxx-4xxx-yxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c=='x'?r:(r&3|8)).toString(16)}));
+const fmt = (n,cur='SGD') => `${cur} ${Number(n).toLocaleString('en-SG',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+const fmtDate = d => new Date(d+'T00:00').toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+const today = () => new Date().toISOString().slice(0,10);
+const thisMonth = () => today().slice(0,7);
+
+// ═══════════════════════════════════════════════════════════
+//  INDEXEDDB
+// ═══════════════════════════════════════════════════════════
+const DB = (() => {
+  let db = null;
+  const NAME = 'spliteasy', VER = 1;
+  const open = () => new Promise((res,rej) => {
+    if (db) return res(db);
+    const r = indexedDB.open(NAME, VER);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      ['expenses','settlements','budgets'].forEach(s => {
+        if (!d.objectStoreNames.contains(s)) d.createObjectStore(s,{keyPath:'id'});
+      });
+      if (!d.objectStoreNames.contains('config')) d.createObjectStore('config',{keyPath:'key'});
+    };
+    r.onsuccess = e => { db = e.target.result; res(db); };
+    r.onerror = rej;
+  });
+  const run = (stores,mode,fn) => open().then(()=>new Promise((res,rej)=>{
+    const t = db.transaction(stores,mode);
+    t.onerror = rej; res(fn(t));
+  }));
+  return {
+    all: s => run(s,'readonly', t=>new Promise((r,j)=>{const q=t.objectStore(s).getAll();q.onsuccess=()=>r(q.result);q.onerror=j;})),
+    put: (s,v) => run(s,'readwrite',t=>new Promise((r,j)=>{const q=t.objectStore(s).put(v);q.onsuccess=()=>r(q.result);q.onerror=j;})),
+    del: (s,id)=> run(s,'readwrite',t=>new Promise((r,j)=>{const q=t.objectStore(s).delete(id);q.onsuccess=()=>r();q.onerror=j;})),
+    clear:(s)  => run(s,'readwrite',t=>new Promise((r,j)=>{const q=t.objectStore(s).clear();q.onsuccess=()=>r();q.onerror=j;})),
+    getCfg:(k,d=null)=>run('config','readonly',t=>new Promise((r,j)=>{const q=t.objectStore('config').get(k);q.onsuccess=()=>r(q.result?q.result.val:d);q.onerror=j;})),
+    setCfg:(k,v)=>DB.put('config',{key:k,val:v}),
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  CRYPTO  (AES-256-GCM + PBKDF2)
+// ═══════════════════════════════════════════════════════════
+const CRYPTO = {
+  async key(pw, salt) {
+    const km = await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+    return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  },
+  async encrypt(data, pw) {
+    const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+    const k = await this.key(pw, salt);
+    const enc = await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(data)));
+    return {v:1,salt:[...salt],iv:[...iv],ct:[...new Uint8Array(enc)]};
+  },
+  async decrypt(pkg, pw) {
+    const k = await this.key(pw, new Uint8Array(pkg.salt));
+    const dec = await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(pkg.iv)},k,new Uint8Array(pkg.ct));
+    return JSON.parse(new TextDecoder().decode(dec));
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+//  LOGIC
+// ═══════════════════════════════════════════════════════════
+const LOGIC = {
+  balances(exps, setts, members) {
+    const b = Object.fromEntries(members.map(m=>[m,0]));
+    for (const e of exps) {
+      if (e._del) continue;
+      if (e.paidBy in b) b[e.paidBy] += e.amount;
+      for (const [p,pct] of Object.entries(e.splits||{}))
+        if (p in b) b[p] -= e.amount*pct/100;
+    }
+    for (const s of setts) {
+      if (s._del) continue;
+      if (s.payer in b)    b[s.payer]    += s.amount;
+      if (s.receiver in b) b[s.receiver] -= s.amount;
+    }
+    return Object.fromEntries(Object.entries(b).map(([k,v])=>[k,Math.round(v*100)/100]));
+  },
+  simplify(bals) {
+    let d = Object.entries(bals).filter(([,v])=>v<-0.01).map(([p,v])=>[p,-v]).sort((a,b)=>b[1]-a[1]).map(x=>[...x]);
+    let c = Object.entries(bals).filter(([,v])=>v>0.01).sort((a,b)=>b[1]-a[1]).map(x=>[...x]);
+    const t=[]; let i=0,j=0;
+    while(i<d.length&&j<c.length){
+      const amt=Math.round(Math.min(d[i][1],c[j][1])*100)/100;
+      t.push({debtor:d[i][0],creditor:c[j][0],amount:amt});
+      d[i][1]=Math.round((d[i][1]-amt)*100)/100; c[j][1]=Math.round((c[j][1]-amt)*100)/100;
+      if(d[i][1]<0.01)i++; if(c[j][1]<0.01)j++;
+    }
+    return t;
+  },
+  // CRDT merge — newer timestamp wins
+  merge(local, remote) {
+    function mArr(a,b){
+      const m=new Map(a.map(x=>[x.id,x]));
+      for(const x of b){const e=m.get(x.id);if(!e||x._ts>e._ts)m.set(x.id,x);}
+      return [...m.values()];
+    }
+    return {
+      expenses:    mArr(local.expenses||[],    remote.expenses||[]),
+      settlements: mArr(local.settlements||[], remote.settlements||[]),
+      budgets:     mArr(local.budgets||[],     remote.budgets||[]),
+    };
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let S = {
+  page: 'dashboard',
+  expenses: [], settlements: [], budgets: [],
+  settings: {groupName:'CP & Partner', members:['CP','Partner'], currency:'SGD', seeded:false},
+};
+async function loadState() {
+  S.expenses    = await DB.all('expenses');
+  S.settlements = await DB.all('settlements');
+  S.budgets     = await DB.all('budgets');
+  const cfg = await DB.getCfg('settings');
+  if (cfg) S.settings = cfg;
+}
+async function saveSettings() { await DB.setCfg('settings', S.settings); }
+
+// ═══════════════════════════════════════════════════════════
+//  SEED DATA  (Singapore context)
+// ═══════════════════════════════════════════════════════════
+async function maybeSeed() {
+  if (S.settings.seeded) return;
+  const t = Date.now(); const DAY = 86400000;
+  const [a,b] = S.settings.members;
+  const rows = [
+    [92,'Rent March',2800,'Rent & Housing',a,'Equal'],
+    [90,'SP Utilities March',185,'Utilities',b,'Equal'],
+    [89,'NTUC groceries',124,'Groceries',a,'Equal'],
+    [88,'Mala Xiang Guo dinner',42,'Food & Dining',b,'Equal'],
+    [87,'Grab to Tiong Bahru',18,'Transport',a,'Equal'],
+    [85,'Netflix subscription',22,'Entertainment',a,'Equal'],
+    [84,'Uniqlo shopping',96,'Shopping',b,'Equal'],
+    [82,'Hawker dinner Old Airport Rd',28,'Food & Dining',a,'Equal'],
+    [62,'Rent April',2800,'Rent & Housing',a,'Equal'],
+    [60,'SP Utilities April',210,'Utilities',b,'Equal'],
+    [59,'Sheng Siong groceries',108,'Groceries',a,'Equal'],
+    [58,'Omakase dinner Ginza Sushi',240,'Food & Dining',a,'Equal'],
+    [57,'MRT top-up',30,'Transport',b,'Equal'],
+    [54,'Spotify Family plan',17,'Entertainment',b,'Equal'],
+    [50,'Watsons skincare',68,'Healthcare',b,'Equal'],
+    [47,'Movie night GV Marina',36,'Entertainment',a,'Equal'],
+    [43,'Klook Sentosa cable car',58,'Entertainment',a,'Equal'],
+    [40,'Ikea weekend trip',220,'Rent & Housing',a,'Equal'],
+    [30,'Rent May',2800,'Rent & Housing',a,'Equal'],
+    [29,'SP Utilities May',198,'Utilities',b,'Equal'],
+    [28,'Cold Storage groceries',132,'Groceries',b,'Equal'],
+    [27,'Grab Raffles Place home',22,'Transport',a,'Equal'],
+    [26,'Chicken rice Maxwell',16,'Food & Dining',b,'Equal'],
+    [25,'Netflix + Disney+ May',34,'Entertainment',a,'Equal'],
+    [24,'Gym membership May',80,'Fitness',b,'Equal'],
+    [22,'Nandos date night',64,'Food & Dining',a,'Equal'],
+    [21,'NTUC groceries top-up',76,'Groceries',a,'Equal'],
+    [15,'Sushi Tei lunch',78,'Food & Dining',b,'Equal'],
+    [10,'Anniversary dinner Odette',380,'Food & Dining',a,'Equal'],
+    [8,'Sheng Siong weekly shop',94,'Groceries',b,'Equal'],
+    [6,'Grab rides work week',55,'Transport',a,'Equal'],
+    [4,'Bubble tea run',18,'Drinks',b,'Equal'],
+    [2,'NTUC groceries',112,'Groceries',a,'Equal'],
+    [1,'Kopitiam lunch',22,'Food & Dining',b,'Equal'],
+    [0,'Ya Kun kaya toast',14,'Food & Dining',a,'Equal'],
+  ];
+  for (const [days,desc,amt,cat,paid,_] of rows) {
+    const d = new Date(t - days*DAY).toISOString().slice(0,10);
+    const sp = Object.fromEntries(S.settings.members.map(m=>[m,100/S.settings.members.length]));
+    const e = {id:uid(),date:d,description:desc,amount:amt,
+      category:cat,paidBy:paid,splitType:'Equal',splits:sp,
+      notes:'',_ts:t-days*DAY,_del:false};
+    await DB.put('expenses',e); S.expenses.push(e);
+  }
+  // Settlement
+  const sd = new Date(t-45*DAY).toISOString().slice(0,10);
+  const sv = {id:uid(),date:sd,payer:b,receiver:a,amount:320,notes:'April settle',_ts:t-45*DAY,_del:false};
+  await DB.put('settlements',sv); S.settlements.push(sv);
+  // Budgets
+  const budgetDefs = [['Food & Dining',600],['Groceries',400],['Transport',200],
+    ['Rent & Housing',2900],['Utilities',220],['Entertainment',150],
+    ['Shopping',300],['Healthcare',150],['Fitness',200]];
+  for (let mo=0;mo<3;mo++) {
+    const mDate = new Date(t); mDate.setDate(1); mDate.setMonth(mDate.getMonth()-mo);
+    const mStr = mDate.toISOString().slice(0,7);
+    for (const [cat,amt] of budgetDefs) {
+      const bv={id:`${mStr}-${cat}`,month:mStr,category:cat,amount:amt,_ts:t};
+      await DB.put('budgets',bv);
+      if(!S.budgets.find(x=>x.id===bv.id)) S.budgets.push(bv);
+    }
+  }
+  S.settings.seeded = true; await saveSettings();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOAST & MODAL
+// ═══════════════════════════════════════════════════════════
+function toast(msg, type='ok', dur=2500) {
+  const wrap = $('toast-wrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`; el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(10px)';el.style.transition='all .3s';setTimeout(()=>el.remove(),300);},dur);
+}
+function showModal(html) {
+  $('modal-box').innerHTML = `<div class="modal-handle"></div>${html}`;
+  $('overlay').classList.add('show');
+  $('overlay').onclick = e => { if(e.target===$('overlay')) closeModal(); };
+}
+function closeModal() { $('overlay').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════════
+//  CHARTS (Chart.js)
+// ═══════════════════════════════════════════════════════════
+let charts = {};
+function destroyCharts() {
+  Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});
+  charts = {};
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER: DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDashboard() {
+  destroyCharts();
+  const {expenses:exps, settlements:setts, settings:{members,currency,groupName}} = S;
+  const bals = LOGIC.balances(exps, setts, members);
+  const txns = LOGIC.simplify(bals);
+  const cur = thisMonth();
+  const mExps = exps.filter(e=>!e._del && e.date.startsWith(cur));
+  const mTotal = mExps.reduce((s,e)=>s+e.amount,0);
+  const mPaid = Object.fromEntries(members.map(m=>[m,mExps.filter(e=>e.paidBy===m).reduce((s,e)=>s+e.amount,0)]));
+
+  // Balance alert
+  let balHtml = txns.length === 0
+    ? `<div class="badge success" style="width:100%;justify-content:center;padding:12px">🎉 All settled up!</div>`
+    : txns.map(t=>`
+        <div class="owe-row">
+          <span style="font-size:0.9rem"><b>${t.debtor}</b> owes <b>${t.creditor}</b></span>
+          <span class="badge danger">${fmt(t.amount,currency)}</span>
+        </div>`).join('');
+
+  // Monthly metrics
+  const mMetrics = `<div class="row">
+    <div class="card-sm"><div class="label">Total this month</div><div class="val-sm">${fmt(mTotal,currency)}</div></div>
+    ${members.map(m=>`<div class="card-sm"><div class="label">${m} paid</div><div class="val-sm">${fmt(mPaid[m]||0,currency)}</div></div>`).join('')}
+  </div>`;
+
+  // Category spending (this month)
+  const catTotals = {};
+  mExps.forEach(e=>{catTotals[e.category]=(catTotals[e.category]||0)+e.amount;});
+  const catEntries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  // Monthly trend (last 4 months)
+  const monthTotals = {};
+  exps.filter(e=>!e._del).forEach(e=>{const m=e.date.slice(0,7);monthTotals[m]=(monthTotals[m]||0)+e.amount;});
+  const trendKeys = Object.keys(monthTotals).sort().slice(-4);
+  const trendVals = trendKeys.map(k=>monthTotals[k]);
+
+  // Recent txns
+  const recent = [...exps].filter(e=>!e._del).sort((a,b)=>b.date.localeCompare(a.date)||b._ts-a._ts).slice(0,5);
+
+  $('content').innerHTML = `
+    <div class="card">
+      <div class="label">Balance</div>
+      ${balHtml}
+    </div>
+    <div class="sec-title">📅 ${new Date().toLocaleString('en-SG',{month:'long',year:'numeric'})}</div>
+    ${mMetrics}
+    ${trendKeys.length>1?`<div class="card"><div class="label">Monthly Trend</div><canvas id="chartTrend" height="140"></canvas></div>`:''}
+    ${catEntries.length?`<div class="card"><div class="label">This Month by Category</div><canvas id="chartCat" height="180"></canvas></div>`:''}
+    <div class="sec-title">🕐 Recent</div>
+    <div class="card">
+      ${recent.length ? recent.map(e=>{
+        const ci=catMap[e.category]||{e:'💰',c:'#888'};
+        return `<div class="txn">
+          <div class="txn-ico" style="color:${ci.c}">${ci.e}</div>
+          <div class="txn-info">
+            <div class="txn-desc">${e.description}</div>
+            <div class="txn-meta">${fmtDate(e.date)} · ${e.paidBy}</div>
+          </div>
+          <div class="txn-amt">${fmt(e.amount,currency)}</div>
+        </div>`;}).join('') : '<div style="color:var(--text2);text-align:center;padding:16px">No expenses yet</div>'}
+    </div>`;
+
+  // Render charts after DOM update
+  setTimeout(()=>{
+    if(trendKeys.length>1 && $('chartTrend')){
+      charts.trend = new Chart($('chartTrend'),{type:'bar',data:{
+        labels:trendKeys.map(k=>{const d=new Date(k+'-01');return d.toLocaleString('en-SG',{month:'short'});}),
+        datasets:[{data:trendVals,backgroundColor:'rgba(124,111,238,0.7)',borderRadius:6}]},
+        options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#7777aa'}},y:{grid:{color:'#2a2a45'},ticks:{color:'#7777aa',callback:v=>`${S.settings.currency} ${v.toLocaleString()}`}}},responsive:true}
+      });
+    }
+    if(catEntries.length && $('chartCat')){
+      charts.cat = new Chart($('chartCat'),{type:'doughnut',data:{
+        labels:catEntries.map(([k])=>k),
+        datasets:[{data:catEntries.map(([,v])=>v),backgroundColor:catEntries.map(([k])=>(catMap[k]||{c:'#888'}).c),borderWidth:0,hoverOffset:6}]},
+        options:{plugins:{legend:{position:'bottom',labels:{color:'#7777aa',boxWidth:12,padding:10}}},cutout:'60%',responsive:true}
+      });
+    }
+  },50);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER: ADD EXPENSE
+// ═══════════════════════════════════════════════════════════
+let editId = null;
+function renderAdd(prefill=null) {
+  destroyCharts();
+  editId = prefill?.id || null;
+  const {settings:{members,currency}} = S;
+  const e = prefill || {date:today(),category:'Food & Dining',paidBy:members[0],splitType:'Equal',splits:{},amount:'',description:'',notes:''};
+  const catOpts = CATS.map(c=>`<option value="${c.l}" ${e.category===c.l?'selected':''}>${c.e} ${c.l}</option>`).join('');
+  const mbrOpts = members.map(m=>`<option value="${m}" ${e.paidBy===m?'selected':''}>${m}</option>`).join('');
+
+  $('content').innerHTML = `
+    <div class="sec-title">${editId?'✏️ Edit Expense':'➕ New Expense'}</div>
+    <div class="card">
+      <div class="field-row">
+        <div class="field" style="flex:2">
+          <label>Description *</label>
+          <input id="f-desc" type="text" placeholder="e.g. Hawker dinner" value="${e.description}" autocomplete="off">
+        </div>
+        <div class="field" style="flex:1">
+          <label>Amount (${currency}) *</label>
+          <input id="f-amt" type="number" min="0.01" step="0.01" placeholder="0.00" value="${e.amount||''}">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="f-cat">${catOpts}</select>
+        </div>
+        <div class="field">
+          <label>Paid by</label>
+          <select id="f-paid">${mbrOpts}</select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Split</label>
+        <div class="split-opts">
+          ${SPLITS.map(s=>`<button class="split-btn ${(e.splitType||'Equal')===s?'active':''}" data-split="${s}">${s}</button>`).join('')}
+        </div>
+        <div id="split-detail"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Date</label>
+          <input id="f-date" type="date" value="${e.date}">
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <input id="f-notes" type="text" placeholder="Optional" value="${e.notes||''}">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-save">${editId?'Update Expense':'Save Expense'}</button>
+      ${editId?`<button class="btn btn-danger" style="margin-top:8px" id="btn-del">Delete Expense</button>`:''}
+    </div>`;
+
+  updateSplitDetail();
+
+  document.querySelectorAll('.split-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.split-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); updateSplitDetail();
+    });
+  });
+  $('btn-save').addEventListener('click', saveExpense);
+  if(editId) $('btn-del').addEventListener('click', deleteExpense);
+}
+
+function getSplitType() { return document.querySelector('.split-btn.active')?.dataset.split||'Equal'; }
+
+function updateSplitDetail() {
+  const st = getSplitType(); const {members} = S.settings;
+  if (st==='Equal') {
+    $('split-detail').innerHTML = `<div style="font-size:0.78rem;color:var(--text2)">Everyone pays ${(100/members.length).toFixed(1)}% each</div>`;
+  } else if (st==='Payer only') {
+    $('split-detail').innerHTML = `<div style="font-size:0.78rem;color:var(--text2)">Only the payer owes — others owe nothing</div>`;
+  } else {
+    $('split-detail').innerHTML = `<div style="font-size:0.78rem;color:var(--text2);margin-bottom:8px">Must total 100%</div>
+      <div class="row">${members.map(m=>`<div class="card-sm"><label style="font-size:0.72rem;color:var(--text2)">${m} %</label>
+        <input class="split-pct" data-mbr="${m}" type="number" min="0" max="100" step="5" value="${(100/members.length).toFixed(1)}" style="margin-top:4px"></div>`).join('')}</div>`;
+  }
+}
+
+async function saveExpense() {
+  const desc = $('f-desc').value.trim();
+  const amt  = parseFloat($('f-amt').value);
+  const cat  = $('f-cat').value;
+  const paid = $('f-paid').value;
+  const st   = getSplitType();
+  const date = $('f-date').value;
+  const notes= $('f-notes').value.trim();
+  const {members,currency} = S.settings;
+
+  if (!desc)          { toast('Description required','err'); return; }
+  if (!amt || amt<=0) { toast('Enter a valid amount','err'); return; }
+
+  let splits = {};
+  if (st==='Equal') {
+    const pct = parseFloat((100/members.length).toFixed(4));
+    members.forEach(m=>splits[m]=pct);
+  } else if (st==='Payer only') {
+    members.forEach(m=>splits[m]=m===paid?100:0);
+  } else {
+    let total = 0;
+    document.querySelectorAll('.split-pct').forEach(inp=>{splits[inp.dataset.mbr]=parseFloat(inp.value)||0; total+=parseFloat(inp.value)||0;});
+    if (Math.abs(total-100)>0.5) { toast(`Splits total ${total.toFixed(1)}% — must be 100%`,'err'); return; }
+  }
+
+  const now = Date.now();
+  const expense = {id:editId||uid(),date,description:desc,amount:amt,category:cat,
+    paidBy:paid,splitType:st,splits,notes,_ts:now,_del:false};
+  await DB.put('expenses', expense);
+  if (editId) { const i=S.expenses.findIndex(e=>e.id===editId); if(i>=0) S.expenses[i]=expense; }
+  else        { S.expenses.push(expense); }
+
+  editId = null;
+  toast(editId?'Updated!':'Expense saved! 💰','ok');
+  navigate('dashboard');
+}
+
+async function deleteExpense() {
+  if (!editId) return;
+  if (!confirm('Delete this expense?')) return;
+  const e = S.expenses.find(x=>x.id===editId);
+  if (e) { e._del=true; e._ts=Date.now(); await DB.put('expenses',e); }
+  toast('Deleted','info'); editId=null; navigate('history');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER: HISTORY
+// ═══════════════════════════════════════════════════════════
+function renderHistory() {
+  destroyCharts();
+  const {settings:{members,currency}} = S;
+  const months = [...new Set(S.expenses.filter(e=>!e._del).map(e=>e.date.slice(0,7)))].sort().reverse().slice(0,6);
+
+  $('content').innerHTML = `
+    <div class="sec-title">📋 History</div>
+    <div class="field-row" style="margin-bottom:12px">
+      <div class="field"><input id="h-search" type="text" placeholder="🔍 Search..." style="margin:0"></div>
+      <div class="field"><select id="h-month" style="margin:0">
+        <option value="">All time</option>
+        ${months.map(m=>`<option value="${m}">${new Date(m+'-01').toLocaleString('en-SG',{month:'long',year:'numeric'})}</option>`).join('')}
+      </select></div>
+    </div>
+    <div id="h-list"></div>`;
+
+  function refresh() {
+    const q = $('h-search').value.toLowerCase().trim();
+    const mo = $('h-month').value;
+    let list = S.expenses.filter(e=>!e._del);
+    if (q)  list = list.filter(e=>e.description.toLowerCase().includes(q)||e.notes?.toLowerCase().includes(q));
+    if (mo) list = list.filter(e=>e.date.startsWith(mo));
+    list.sort((a,b)=>b.date.localeCompare(a.date)||b._ts-a._ts);
+    const total = list.reduce((s,e)=>s+e.amount,0);
+    $('h-list').innerHTML = list.length===0
+      ? `<div class="card" style="text-align:center;color:var(--text2)">No transactions found</div>`
+      : `<div style="font-size:0.78rem;color:var(--text2);margin-bottom:8px">${list.length} transactions · ${fmt(total,currency)}</div>
+         <div class="card">${list.map(e=>{
+           const ci=catMap[e.category]||{e:'💰',c:'#888'};
+           const myShare = (e.splits[S.settings.members[0]]||0)*e.amount/100;
+           return `<div class="txn" data-id="${e.id}">
+             <div class="txn-ico" style="color:${ci.c}">${ci.e}</div>
+             <div class="txn-info">
+               <div class="txn-desc">${e.description}</div>
+               <div class="txn-meta">${fmtDate(e.date)} · ${e.category} · <b>${e.paidBy}</b></div>
+               ${e.notes?`<div class="txn-meta" style="font-style:italic">📝 ${e.notes}</div>`:''}
+             </div>
+             <div class="txn-amt">${fmt(e.amount,currency)}<div class="split">${Object.entries(e.splits).filter(([,p])=>p>0).map(([m,p])=>`${m}: ${p.toFixed(0)}%`).join(' · ')}</div></div>
+           </div>`; }).join('')}</div>`;
+    // Edit on tap
+    $('h-list').querySelectorAll('.txn').forEach(row=>{
+      row.addEventListener('click',()=>{
+        const exp = S.expenses.find(e=>e.id===row.dataset.id);
+        if (exp) { navigate('add',exp); }
+      });
+    });
+  }
+  $('h-search').addEventListener('input',refresh);
+  $('h-month').addEventListener('change',refresh);
+  refresh();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER: BALANCE
+// ═══════════════════════════════════════════════════════════
+function renderBalance() {
+  destroyCharts();
+  const {settings:{members,currency}} = S;
+  const bals = LOGIC.balances(S.expenses, S.settlements, members);
+  const txns = LOGIC.simplify(bals);
+
+  const recentSetts = [...S.settlements].filter(s=>!s._del).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+
+  $('content').innerHTML = `
+    <div class="sec-title">⚖️ Who Owes Who</div>
+    <div class="card">
+      ${txns.length===0
+        ? '<div class="badge success" style="justify-content:center;padding:12px">🎉 All settled up!</div>'
+        : txns.map(t=>`
+          <div class="owe-row">
+            <div>
+              <div style="font-size:0.9rem"><b>${t.debtor}</b> → <b>${t.creditor}</b></div>
+              <div style="font-size:0.72rem;color:var(--text2)">tap to record payment</div>
+            </div>
+            <span class="badge danger" style="cursor:pointer" data-debtor="${t.debtor}" data-creditor="${t.creditor}" data-amt="${t.amount}">${fmt(t.amount,currency)}</span>
+          </div>`).join('')}
+    </div>
+    <div class="sec-title">👤 Running Totals</div>
+    <div class="row">
+      ${members.map(m=>{
+        const v=bals[m]||0;
+        const cls = v>0.01?'success':v<-0.01?'danger':'';
+        return `<div class="card-sm">
+          <div class="label">${m}</div>
+          <div class="val-sm ${cls}" style="${cls==='success'?'color:var(--success)':cls==='danger'?'color:var(--danger)':''}">${v>=0?'+':''}${fmt(v,currency)}</div>
+          <div style="font-size:0.7rem;color:var(--text2);margin-top:4px">${v>0.01?'is owed':v<-0.01?'owes':'settled'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="sec-title">💳 Record Payment</div>
+    <div class="card">
+      <div class="field-row">
+        <div class="field"><label>Who pays</label><select id="b-payer">${members.map(m=>`<option>${m}</option>`).join('')}</select></div>
+        <div class="field"><label>To</label><select id="b-recv">${members.map(m=>`<option>${m}</option>`).join('')}</select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Amount (${currency})</label><input id="b-amt" type="number" min="0.01" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label>Date</label><input id="b-date" type="date" value="${today()}"></div>
+      </div>
+      <div class="field"><label>Notes</label><input id="b-notes" type="text" placeholder="e.g. PayNow transfer"></div>
+      <button class="btn btn-primary" id="b-save">✅ Record Payment</button>
+    </div>
+    ${recentSetts.length?`
+      <div class="sec-title">🗂️ Recent Settlements</div>
+      <div class="card">${recentSetts.map(s=>`
+        <div class="txn">
+          <div class="txn-ico">💳</div>
+          <div class="txn-info">
+            <div class="txn-desc">${s.payer} paid ${s.receiver}</div>
+            <div class="txn-meta">${fmtDate(s.date)}${s.notes?' · '+s.notes:''}</div>
+          </div>
+          <div class="txn-amt">${fmt(s.amount,currency)}</div>
+        </div>`).join('')}
+      </div>`:''}`;
+
+  // Quick-fill from owe-row badge click
+  document.querySelectorAll('[data-debtor]').forEach(badge=>{
+    badge.addEventListener('click',()=>{
+      $('b-payer').value=badge.dataset.debtor;
+      $('b-recv').value=badge.dataset.creditor;
+      $('b-amt').value=parseFloat(badge.dataset.amt).toFixed(2);
+      $('b-amt').scrollIntoView({behavior:'smooth'});
+    });
+  });
+  $('b-save').addEventListener('click', async()=>{
+    const payer=$('b-payer').value, recv=$('b-recv').value;
+    const amt=parseFloat($('b-amt').value), date=$('b-date').value;
+    const notes=$('b-notes').value.trim();
+    if(payer===recv){toast('Payer and receiver must differ','err');return;}
+    if(!amt||amt<=0){toast('Enter a valid amount','err');return;}
+    const s={id:uid(),date,payer,receiver:recv,amount:amt,notes,_ts:Date.now(),_del:false};
+    await DB.put('settlements',s); S.settlements.push(s);
+    toast(`✅ ${payer} paid ${recv} ${fmt(amt,S.settings.currency)}`,'ok');
+    renderBalance();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER: SYNC  (encrypted export / import + merge)
+// ═══════════════════════════════════════════════════════════
+function renderSync() {
+  destroyCharts();
+  $('content').innerHTML = `
+    <div class="sec-title">🔄 Sync Between Devices</div>
+    <div class="card">
+      <div style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;line-height:1.5">
+        Share your data between iPhone A and iPhone B by exporting an encrypted backup,
+        then importing it on the other device. All data is encrypted with your password —
+        nothing is sent to any server.
+      </div>
+      <div style="display:flex;gap:20px;font-size:0.8rem;color:var(--text2);margin-bottom:16px">
+        <div>📤 <b style="color:var(--text)">Phone A</b><br>Export → share via AirDrop / iMessage</div>
+        <div>📥 <b style="color:var(--text)">Phone B</b><br>Import → smart merge runs automatically</div>
+      </div>
+    </div>
+
+    <div class="sec-title">📤 Export (This Device)</div>
+    <div class="card">
+      <div class="field">
+        <label>Encryption Password</label>
+        <div class="pw-wrap">
+          <input id="ex-pw" type="password" placeholder="Enter a password to encrypt">
+          <button class="pw-eye" onclick="togglePw('ex-pw')">👁️</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <input id="ex-pw2" type="password" placeholder="Repeat password">
+      </div>
+      <button class="btn btn-primary" id="btn-export">📤 Export Encrypted Backup</button>
+    </div>
+
+    <div class="sec-title">📥 Import & Merge</div>
+    <div class="card">
+      <div class="field">
+        <label>Select backup file (.json)</label>
+        <input id="im-file" type="file" accept=".json" style="font-size:0.85rem;padding:10px">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input id="im-pw" type="password" placeholder="Password used during export">
+          <button class="pw-eye" onclick="togglePw('im-pw')">👁️</button>
+        </div>
+      </div>
+      <button class="btn btn-outline" id="btn-import">📥 Import & Merge</button>
+    </div>
+
+    <div class="sec-title" style="color:var(--danger)">⚠️ Danger Zone</div>
+    <div class="card">
+      <button class="btn btn-danger" id="btn-reset">Reset All Data (keep settings)</button>
+    </div>`;
+
+  $('btn-export').addEventListener('click', doExport);
+  $('btn-import').addEventListener('click', doImport);
+  $('btn-reset').addEventListener('click', doReset);
+}
+
+function togglePw(id) { const el=$(id); el.type=el.type==='password'?'text':'password'; }
+
+async function doExport() {
+  const pw=$('ex-pw').value, pw2=$('ex-pw2').value;
+  if(!pw){toast('Enter a password','err');return;}
+  if(pw!==pw2){toast('Passwords do not match','err');return;}
+  toast('Encrypting...','info',1500);
+  try {
+    const payload = {
+      expenses:    S.expenses.filter(e=>!e._del),
+      settlements: S.settlements.filter(s=>!s._del),
+      budgets:     S.budgets,
+      exportedAt:  new Date().toISOString(),
+      version:     '1.0',
+    };
+    const encrypted = await CRYPTO.encrypt(payload, pw);
+    const blob = new Blob([JSON.stringify(encrypted)],{type:'application/json'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href=url; a.download=`spliteasy_backup_${today()}.json`; a.click();
+    URL.revokeObjectURL(url);
+    toast('Backup downloaded! Share it via AirDrop or iMessage','ok',3500);
+  } catch(e) { toast('Export failed: '+e.message,'err'); }
+}
+
+async function doImport() {
+  const file=$('im-file').files[0], pw=$('im-pw').value;
+  if(!file){toast('Select a backup file','err');return;}
+  if(!pw){toast('Enter the decryption password','err');return;}
+  toast('Decrypting & merging...','info',2000);
+  try {
+    const text = await file.text();
+    const pkg  = JSON.parse(text);
+    const remote = await CRYPTO.decrypt(pkg, pw);
+    const local  = {expenses:S.expenses, settlements:S.settlements, budgets:S.budgets};
+    const merged = LOGIC.merge(local, remote);
+
+    // Save merged data
+    await DB.clear('expenses');    for(const e of merged.expenses)    await DB.put('expenses',e);
+    await DB.clear('settlements'); for(const s of merged.settlements) await DB.put('settlements',s);
+    await DB.clear('budgets');     for(const b of merged.budgets)     await DB.put('budgets',b);
+    S.expenses    = merged.expenses;
+    S.settlements = merged.settlements;
+    S.budgets     = merged.budgets;
+
+    const newE = merged.expenses.length - local.expenses.length;
+    const newS = merged.settlements.length - local.settlements.length;
+    toast(`✅ Merged! +${Math.max(0,newE)} expenses, +${Math.max(0,newS)} settlements`,'ok',4000);
+    navigate('dashboard');
+  } catch(e) { toast('Import failed — wrong password or corrupted file','err',4000); }
+}
+
+async function doReset() {
+  if(!confirm('Delete all expenses, settlements and budgets? Settings are kept.')) return;
+  await DB.clear('expenses'); await DB.clear('settlements'); await DB.clear('budgets');
+  S.expenses=[]; S.settlements=[]; S.budgets=[];
+  S.settings.seeded=false; await saveSettings();
+  toast('Data cleared','info');
+  navigate('dashboard');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER: SETTINGS
+// ═══════════════════════════════════════════════════════════
+const CURRENCIES = ['SGD','USD','GBP','EUR','MYR','AUD','JPY','THB','IDR'];
+function renderSettings() {
+  destroyCharts();
+  const {settings:{groupName,members,currency}} = S;
+  $('content').innerHTML = `
+    <div class="sec-title">⚙️ Settings</div>
+    <div class="card">
+      <div class="field"><label>Group Name</label><input id="s-gname" value="${groupName}"></div>
+      <div class="field"><label>Currency</label><select id="s-cur">${CURRENCIES.map(c=>`<option ${c===currency?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="sec-title" style="margin-top:4px">Members</div>
+      <div id="s-members">${members.map((m,i)=>`
+        <div class="field-row" style="align-items:center">
+          <div class="field" style="flex:1"><input class="s-mbr" value="${m}"></div>
+          ${members.length>2?`<button class="btn btn-danger btn-sm btn-icon" data-idx="${i}" id="rm-${i}">✕</button>`:''}
+        </div>`).join('')}
+        <button class="btn btn-outline btn-sm" id="s-add-mbr" style="margin-top:4px">+ Add Member</button>
+      </div>
+      <button class="btn btn-primary" id="s-save" style="margin-top:16px">💾 Save Settings</button>
+    </div>
+    <div class="sec-title">ℹ️ About</div>
+    <div class="card">
+      <div class="set-row"><span>App</span><span class="badge accent">SplitEasy v1.0</span></div>
+      <div class="set-row"><span>Storage</span><span style="font-size:0.8rem;color:var(--text2)">Local (on this device)</span></div>
+      <div class="set-row"><span>Sync</span><span style="font-size:0.8rem;color:var(--text2)">Via encrypted export / import</span></div>
+    </div>`;
+
+  // Remove member
+  members.forEach((_,i)=>{
+    const rmBtn = $('rm-'+i);
+    if(rmBtn) rmBtn.addEventListener('click',()=>{
+      const cur = [...document.querySelectorAll('.s-mbr')].map(x=>x.value.trim()).filter(Boolean);
+      if(cur.length<=2){toast('Minimum 2 members','err');return;}
+      cur.splice(i,1);
+      S.settings.members=cur; renderSettings();
+    });
+  });
+  $('s-add-mbr').addEventListener('click',()=>{
+    const cur=[...document.querySelectorAll('.s-mbr')].map(x=>x.value.trim()).filter(Boolean);
+    cur.push(`Member ${cur.length+1}`); S.settings.members=cur; renderSettings();
+  });
+  $('s-save').addEventListener('click', async()=>{
+    const gn=$('s-gname').value.trim();
+    const mbrs=[...document.querySelectorAll('.s-mbr')].map(x=>x.value.trim()).filter(Boolean);
+    const cur=$('s-cur').value;
+    if(!gn){toast('Group name required','err');return;}
+    if(mbrs.length<2){toast('At least 2 members required','err');return;}
+    S.settings.groupName=gn; S.settings.members=mbrs; S.settings.currency=cur;
+    await saveSettings();
+    toast('Settings saved ✅','ok');
+    navigate('dashboard');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ROUTER
+// ═══════════════════════════════════════════════════════════
+const PAGES = {
+  dashboard:{label:'SplitEasy',  render:renderDashboard},
+  add:      {label:'Add Expense',render:()=>renderAdd()},
+  history:  {label:'History',    render:renderHistory},
+  balance:  {label:'Balance',    render:renderBalance},
+  sync:     {label:'Sync',       render:renderSync},
+  settings: {label:'Settings',   render:renderSettings},
+};
+
+function navigate(page, data=null) {
+  S.page = page;
+  if (page==='add' && data) { renderAdd(data); }
+  else PAGES[page]?.render();
+
+  // Update header
+  const {groupName, members} = S.settings;
+  $('hdr-title').textContent = page==='dashboard' ? groupName : PAGES[page]?.label||page;
+  $('hdr-sub').textContent   = page==='dashboard' ? members.join(' · ') : '';
+
+  // Update nav
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.page===page);
+  });
+  $('content').scrollTop = 0;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+document.querySelectorAll('.nav-btn').forEach(b=>{
+  b.addEventListener('click',()=>navigate(b.dataset.page));
+});
+
+// Header settings icon tap (right side of header)
+$('header').addEventListener('click', e=>{
+  if(e.offsetX > $('header').offsetWidth - 50) navigate('settings');
+});
+
+async function init() {
+  await loadState();
+  await maybeSeed();
+  navigate('dashboard');
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
