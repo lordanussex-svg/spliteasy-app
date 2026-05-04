@@ -1,4 +1,4 @@
-const CACHE = "spliteasy-v1";
+const CACHE = "spliteasy-v3";
 const ASSETS = ["./","./index.html","https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(()=>self.skipWaiting()));
