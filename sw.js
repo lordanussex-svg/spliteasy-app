@@ -1,4 +1,4 @@
-const V='v3';
+const V='splitkira-v1';
 const CACHE=['./','/index.html','js/config.js','js/db.js','js/crypto.js','js/logic.js',
   'js/state.js','js/ui.js','js/groups.js','js/dashboard.js','js/add.js','js/history.js',
   'js/balance.js','js/settings.js','js/export.js','js/sync.js','js/router.js',

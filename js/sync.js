@@ -12,7 +12,7 @@ async function doExport(){
     const enc=await CRYPTO.encrypt(payload,pw);
     const blob=new Blob([JSON.stringify(enc)],{type:'application/json'});
     const url=URL.createObjectURL(blob);const a=document.createElement('a');
-    a.href=url;a.download=`spliteasy_backup_${today()}.json`;a.click();URL.revokeObjectURL(url);
+    a.href=url;a.download=`splitkira_backup_${today()}.json`;a.click();URL.revokeObjectURL(url);
     toast('Backup downloaded — share via AirDrop or iMessage','ok',3500);
   }catch(e){toast('Export failed: '+e.message,'err');}
 }

@@ -97,16 +97,18 @@ function renderSettings(tab=null){
   }else if(t==='about'){
     body=`<div class="card">
       <div style="text-align:center;padding:14px 0 6px">
-        <div style="font-size:2.5rem;margin-bottom:6px">💸</div>
-        <div style="font-size:1.15rem;font-weight:700">SplitEasy</div>
-        <div style="font-size:0.76rem;color:var(--text2);margin-top:3px">v3.0 · Multi-group expense tracker</div>
+        <div style="font-size:2.5rem;margin-bottom:6px">✦</div>
+        <div style="font-size:1.25rem;font-weight:700;letter-spacing:-0.5px">SplitKira</div>
+        <div style="font-size:0.72rem;color:var(--accent);font-weight:600;margin-top:2px;letter-spacing:0.5px">LOCAL · ENCRYPTED · FAIR</div>
+        <div style="font-size:0.72rem;color:var(--text2);margin-top:4px">v1.0 · Split bills. Kira-kira together.</div>
       </div>
       <div class="divider"></div>
-      <div class="set-row"><span>Version</span><span class="badge accent">v3.0</span></div>
+      <div class="set-row"><span>Version</span><span class="badge accent">v1.0</span></div>
       <div class="set-row"><span>Multi-group</span><span class="badge success">Yes</span></div>
-      <div class="set-row"><span>Storage</span><span style="font-size:0.78rem;color:var(--text2)">IndexedDB (on-device)</span></div>
-      <div class="set-row"><span>Encryption</span><span style="font-size:0.78rem;color:var(--text2)">AES-256-GCM</span></div>
-      <div class="set-row"><span>Server data</span><span class="badge success">None</span></div>
+      <div class="set-row"><span>Storage</span><span class="badge success">On-device only</span></div>
+      <div class="set-row"><span>Encryption</span><span class="badge success">AES-256-GCM</span></div>
+      <div class="set-row"><span>Server / account</span><span class="badge success">None — ever</span></div>
+      <div class="set-row"><span>Ads</span><span class="badge success">Zero</span></div>
     </div>`;
   }
   $('content').innerHTML=tabs+body;

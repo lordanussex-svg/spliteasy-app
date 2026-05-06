@@ -1,7 +1,7 @@
 {
-  "name": "SplitEasy — Expense Tracker",
-  "short_name": "SplitEasy",
-  "description": "Track shared expenses. Sync via encrypted backup.",
+  "name": "SplitKira — Split & Settle",
+  "short_name": "SplitKira",
+  "description": "SplitKira — Split bills fairly. Local-only storage, AES-256 encrypted backup. No account, no server, no ads.",
   "start_url": "https://lordanussex-svg.github.io/spliteasy-app/",
   "scope": "https://lordanussex-svg.github.io/spliteasy-app/",
   "display": "standalone",

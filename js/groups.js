@@ -2,7 +2,7 @@
 function renderGroups(){
   destroyCharts();
   showNav(false);
-  setHeader('SplitEasy','Your expense groups',false,[
+  setHeader('SplitKira','Local · Encrypted · Fair',false,[
     `<button class="hdr-btn" onclick="showGroupModal()" title="New group">+</button>`
   ]);
   const grps=S.groups.filter(g=>!g._del).sort((a,b)=>b.createdAt-a.createdAt);

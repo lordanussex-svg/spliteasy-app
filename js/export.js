@@ -45,9 +45,9 @@ function exportPDF(){
   const txns=LOGIC.simplify(bals);
   const TH={fillColor:[92,79,207],textColor:255,fontStyle:'bold'};
   const TS={fontSize:9,cellPadding:3};const ARS={fillColor:[245,244,255]};
-  function footer(){const n=doc.internal.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150);doc.text(`SplitEasy · ${g.name} · ${new Date().toLocaleDateString('en-SG')} · Page ${i}/${n}`,W/2,290,{align:'center'});}}
+  function footer(){const n=doc.internal.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150);doc.text(`SplitKira · ${g.name} · ${new Date().toLocaleDateString('en-SG')} · Page ${i}/${n}`,W/2,290,{align:'center'});}}
   doc.setFillColor(44,35,120);doc.rect(0,0,W,40,'F');doc.setFillColor(92,79,207);doc.rect(0,33,W,8,'F');
-  doc.setTextColor(255,255,255);doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text('SplitEasy',14,15);
+  doc.setTextColor(255,255,255);doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text('SplitKira',14,15);
   doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text('Expense Report',14,23);
   doc.setFontSize(8.5);doc.text(g.name,14,30);doc.text(`Generated: ${new Date().toLocaleDateString('en-SG',{day:'numeric',month:'long',year:'numeric'})}`,W-14,30,{align:'right'});
   let y=50;
