@@ -92,6 +92,11 @@ function renderSettings(tab=null){
       <div class="field"><label>Password</label><div class="pw-wrap"><input id="im-pw" type="password" placeholder="Password used on export"><button class="pw-eye" onclick="togglePw('im-pw')">👁</button></div></div>
       <button class="btn btn-outline" id="btn-import">Import & Merge</button>
     </div>
+    <div class="sec-title">QR Sync</div>
+    <div class="card">
+      <div class="set-row"><div><div class="set-label">Share This Group</div><div class="set-desc">Generate QR code — last 90 days</div></div><button class="btn btn-outline btn-sm" id="btn-qr-export">Share QR</button></div>
+      <div class="set-row"><div><div class="set-label">Scan QR Code</div><div class="set-desc">Import from another device</div></div><button class="btn btn-outline btn-sm" id="btn-qr-scan">Scan</button></div>
+    </div>
     <div class="sec-title" style="color:var(--danger)">Danger Zone</div>
     <div class="card"><button class="btn btn-danger" id="btn-reset">Reset This Group's Data</button></div>`;
   }else if(t==='about'){
@@ -157,7 +162,13 @@ function renderSettings(tab=null){
     });
   }
   if(t==='export'){$('btn-csv').addEventListener('click',exportCSV);$('btn-xlsx').addEventListener('click',exportXLSX);$('btn-pdf').addEventListener('click',exportPDF);}
-  if(t==='sync'){$('btn-export').addEventListener('click',doExport);$('btn-import').addEventListener('click',doImport);$('btn-reset').addEventListener('click',doReset);}
+  if(t==='sync'){
+    $('btn-export').addEventListener('click',doExport);
+    $('btn-import').addEventListener('click',doImport);
+    $('btn-reset').addEventListener('click',doReset);
+    $('btn-qr-export').addEventListener('click',()=>showQRExport(g.id));
+    $('btn-qr-scan').addEventListener('click',()=>showQRScan());
+  }
 }
 function showCatModal(idx){
   const ex=idx>=0?S.categories[idx]:{e:'💰',l:'',c:'#888888'};

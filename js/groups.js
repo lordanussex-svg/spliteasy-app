@@ -3,6 +3,7 @@ function renderGroups(){
   destroyCharts();
   showNav(false);
   setHeader('SplitKira','Local · Encrypted · Fair',false,[
+    `<button class="hdr-btn" onclick="showSyncModal()" title="Sync &amp; Backup" style="font-size:1.05rem">&#9729;</button>`,
     `<button class="hdr-btn" onclick="showGroupModal()" title="New group">+</button>`
   ]);
   const grps=S.groups.filter(g=>!g._del).sort((a,b)=>b.createdAt-a.createdAt);
