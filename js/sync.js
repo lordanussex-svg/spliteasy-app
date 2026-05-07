@@ -90,18 +90,25 @@ function showImportPreview(remote){
 
 // ═══════════════════════════════════════════════
 // IMPORT Step 3 — execute selections
+// BUG FIX: use el != null ? el.value : '__skip__'
+// NOT el?.value || '__skip__' (empty string "" is falsy!)
 // ═══════════════════════════════════════════════
 async function confirmImport(){
   const remote=window._pendingImport;
   const bkGroups=window._pendingGroups||[];
-  const selections=bkGroups.map((_,i)=>document.getElementById('imp-t-'+i)?.value||'__skip__');
+  // CRITICAL: don't use ||'__skip__' — empty string "" means "create new", not skip
+  const selections=bkGroups.map((_,i)=>{
+    const el=document.getElementById('imp-t-'+i);
+    return el!=null?el.value:'__skip__';
+  });
   const toProcess=bkGroups.filter((_,i)=>selections[i]!=='__skip__');
   if(!toProcess.length){toast('Nothing selected to import','err');return;}
-  // Warn about overwrites
+  // Warn about overwrites (only when syncing into an existing group)
   const overwriteNames=[];
   bkGroups.forEach((g,i)=>{
-    if(selections[i]&&selections[i]!=='__skip__'&&selections[i]!==''){
-      const lg=S.groups.find(l=>l.id===selections[i]);
+    const sel=selections[i];
+    if(sel&&sel!=='__skip__'){// non-empty = existing group selected
+      const lg=S.groups.find(l=>l.id===sel);
       if(lg)overwriteNames.push('"'+lg.name+'"');
     }
   });
@@ -113,9 +120,10 @@ async function confirmImport(){
   try{
     let created=0,updated=0;
     for(let i=0;i<bkGroups.length;i++){
-      if(selections[i]==='__skip__')continue;
-      const isNew=selections[i]==='';
-      await _importGroupData(remote,bkGroups[i],isNew?null:selections[i]);
+      const sel=selections[i];
+      if(sel==='__skip__')continue;
+      const isNew=(sel===''); // empty string = create new
+      await _importGroupData(remote,bkGroups[i],isNew?null:sel);
       isNew?created++:updated++;
     }
     if(remote.categories?.length){S.categories=remote.categories;await saveCategories();}
@@ -124,44 +132,54 @@ async function confirmImport(){
     if(created)parts.push(created+' group'+(created!==1?'s':'')+' created');
     toast(parts.join(' · ')+' ✅','ok',4000);
     S.activeGroupId=null;showNav(false);renderGroups();
-  }catch(e){toast('Import error: '+e.message,'err',4000);}
+  }catch(e){
+    console.error('Import error',e);
+    toast('Import error: '+e.message,'err',4000);
+  }
 }
 
 // ═══════════════════════════════════════════════
-// IMPORT helper — import / overwrite one group
+// IMPORT helper — targeted DB ops (no full clear)
 // ═══════════════════════════════════════════════
 async function _importGroupData(remote,bkGroup,targetGroupId){
   const assignId=targetGroupId||uid();
   if(targetGroupId){
-    // Overwrite: remove target group's records from memory
+    // OVERWRITE: surgically delete existing records for this group only
+    const expDel=S.expenses.filter(e=>e.groupId===targetGroupId);
+    const settDel=S.settlements.filter(s=>s.groupId===targetGroupId);
+    const budDel=S.budgets.filter(b=>b.groupId===targetGroupId);
+    for(const e of expDel)await DB.del('expenses',e.id);
+    for(const s of settDel)await DB.del('settlements',s.id);
+    for(const b of budDel)await DB.del('budgets',b.id);
     S.expenses=S.expenses.filter(e=>e.groupId!==targetGroupId);
     S.settlements=S.settlements.filter(s=>s.groupId!==targetGroupId);
     S.budgets=S.budgets.filter(b=>b.groupId!==targetGroupId);
-    // Update group settings to match backup
+    // Update group profile to match backup
     const lg=S.groups.find(g=>g.id===targetGroupId);
     if(lg){
-      Object.assign(lg,{name:bkGroup.name,emoji:bkGroup.emoji,color:bkGroup.color,
-        members:bkGroup.members,currency:bkGroup.currency,_ts:Date.now()});
+      Object.assign(lg,{name:bkGroup.name,emoji:bkGroup.emoji,
+        color:bkGroup.color||lg.color,members:bkGroup.members,
+        currency:bkGroup.currency,_ts:Date.now()});
       await DB.put('groups',lg);
     }
   } else {
-    // Create new group
-    const ng={id:assignId,name:bkGroup.name,emoji:bkGroup.emoji,color:bkGroup.color||'#7c6fee',
-      members:bkGroup.members,currency:bkGroup.currency,createdAt:Date.now(),_ts:Date.now()};
+    // CREATE NEW: fresh group with new ID
+    const ng={id:assignId,name:bkGroup.name,emoji:bkGroup.emoji||'🏠',
+      color:bkGroup.color||'#7c6fee',members:bkGroup.members,
+      currency:bkGroup.currency,createdAt:Date.now(),_ts:Date.now()};
     await DB.put('groups',ng);
     S.groups.push(ng);
   }
-  // Remap groupId and add to memory
+  // Import records — remap groupId from backup ID to local assignId
   const newExps=(remote.expenses||[]).filter(e=>e.groupId===bkGroup.id).map(e=>({...e,groupId:assignId}));
   const newSetts=(remote.settlements||[]).filter(s=>s.groupId===bkGroup.id).map(s=>({...s,groupId:assignId}));
   const newBuds=(remote.budgets||[]).filter(b=>b.groupId===bkGroup.id).map(b=>({...b,groupId:assignId}));
+  for(const e of newExps)await DB.put('expenses',e);
+  for(const s of newSetts)await DB.put('settlements',s);
+  for(const b of newBuds)await DB.put('budgets',b);
   S.expenses.push(...newExps);
   S.settlements.push(...newSetts);
   S.budgets.push(...newBuds);
-  // Persist all (clear + re-insert to avoid orphans)
-  await DB.clear('expenses');for(const e of S.expenses)await DB.put('expenses',e);
-  await DB.clear('settlements');for(const s of S.settlements)await DB.put('settlements',s);
-  await DB.clear('budgets');for(const b of S.budgets)await DB.put('budgets',b);
 }
 
 // ═══════════════════════════════════════════════
@@ -175,23 +193,21 @@ async function doReset(){
     ...S.settlements.filter(s=>s.groupId===g.id).map(s=>s.id),
     ...S.budgets.filter(b=>b.groupId===g.id).map(b=>b.id),
   ]);
+  for(const id of ids){
+    await DB.del('expenses',id);
+    await DB.del('settlements',id);
+    await DB.del('budgets',id);
+  }
   S.expenses=S.expenses.filter(e=>!ids.has(e.id));
   S.settlements=S.settlements.filter(s=>!ids.has(s.id));
   S.budgets=S.budgets.filter(b=>!ids.has(b.id));
-  await DB.clear('expenses');for(const e of S.expenses)await DB.put('expenses',e);
-  await DB.clear('settlements');for(const s of S.settlements)await DB.put('settlements',s);
-  await DB.clear('budgets');for(const b of S.budgets)await DB.put('budgets',b);
   toast('Group data cleared','info');navigate('dashboard');
 }
 
 // ═══════════════════════════════════════════════
-// GLOBAL SYNC MODAL — accessible from groups page
+// GLOBAL SYNC MODAL — from groups page (☁ button)
 // ═══════════════════════════════════════════════
 function showSyncModal(){
-  const groups=S.groups.filter(g=>!g._del);
-  const grpOpts=groups.length
-    ?groups.map(g=>`<option value="${g.id}">${g.emoji||''} ${g.name}</option>`).join('')
-    :'<option value="">No groups yet</option>';
   showModal(`<div class="modal-title">Sync &amp; Backup</div>
     <div style="font-size:0.75rem;color:var(--text2);line-height:1.6;margin-bottom:14px">
       AES-256 encrypted · Nothing leaves your device
@@ -232,7 +248,7 @@ function _exportModalHTML(){
 }
 function _importModalHTML(){
   return`<div class="modal-title">Import Backup</div>
-    <div style="font-size:0.78rem;color:var(--text2);margin-bottom:10px">You'll choose which group to sync after decryption.</div>
+    <div style="font-size:0.78rem;color:var(--text2);margin-bottom:10px">You will choose which group to sync after decryption.</div>
     <div class="field"><label>Backup file (.json)</label><input id="im-file" type="file" accept=".json"></div>
     <div class="field"><label>Password</label><div class="pw-wrap"><input id="im-pw" type="password" placeholder="Password used on export"><button class="pw-eye" onclick="togglePw('im-pw')">👁</button></div></div>
     <div class="btn-row">
@@ -242,7 +258,7 @@ function _importModalHTML(){
 }
 
 // ═══════════════════════════════════════════════
-// QR EXPORT — pick group, generate QR code
+// QR EXPORT — using qrcodejs (new QRCode constructor)
 // ═══════════════════════════════════════════════
 function showQRExportPicker(){
   const groups=S.groups.filter(g=>!g._del);
@@ -254,7 +270,7 @@ function showQRExportPicker(){
       <label>Choose group to share</label>
       <select id="qr-pick-grp">${opts}</select>
     </div>
-    <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px">Includes last 90 days of expenses. Unencrypted — for device-to-device transfer only.</div>
+    <div style="font-size:0.75rem;color:var(--text2);margin-bottom:12px">Includes last 90 days. Not encrypted — for immediate device-to-device transfer only.</div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="showSyncModal()">&#8592; Back</button>
       <button class="btn btn-primary" onclick="showQRExport($('qr-pick-grp').value)">Generate QR</button>
@@ -265,64 +281,85 @@ function showQRExport(groupId){
   if(!groupId){toast('Select a group','err');return;}
   const g=S.groups.find(x=>x.id===groupId);
   if(!g){toast('Group not found','err');return;}
-  if(typeof QRCode==='undefined'){toast('QR library not loaded — need internet first','err',4000);return;}
-  // Build compact payload — last 90 days
-  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-90);
-  const cutoffStr=cutoff.toISOString().slice(0,10);
-  let exps=S.expenses.filter(e=>!e._del&&e.groupId===groupId&&e.date>=cutoffStr);
-  let setts=S.settlements.filter(s=>!s._del&&s.groupId===groupId);
-  const payload={v:'sk1',g:{id:g.id,name:g.name,emoji:g.emoji,color:g.color,members:g.members,currency:g.currency},e:exps,s:setts,ts:Date.now()};
-  const json=JSON.stringify(payload);
-  // Check size — QR max ~2900 bytes of data; LZString helps
-  if(typeof LZString==='undefined'){toast('Compression library not loaded','err',4000);return;}
-  let compressed=LZString.compressToEncodedURIComponent(json);
-  // If still too big, trim to 30 days
-  if(compressed.length>2800){
-    const cutoff30=new Date();cutoff30.setDate(cutoff30.getDate()-30);
-    const c30=cutoff30.toISOString().slice(0,10);
-    exps=S.expenses.filter(e=>!e._del&&e.groupId===groupId&&e.date>=c30);
-    const p2={...payload,e:exps,_trimmed:'30d'};
-    compressed=LZString.compressToEncodedURIComponent(JSON.stringify(p2));
+  if(typeof QRCode==='undefined'){
+    toast('QR library not cached yet — open app while connected to internet first, then retry','err',5000);
+    return;
   }
-  const dayLabel=compressed.length>2800?'14':'90';
-  showModal(`<div class="modal-title">QR Code — ${g.name}</div>
+  if(typeof LZString==='undefined'){
+    toast('Compression library not cached yet — open app while connected first','err',5000);
+    return;
+  }
+  // Build payload — last 90 days default, trim to 30 if too large
+  const cutoff90=new Date();cutoff90.setDate(cutoff90.getDate()-90);
+  const c90=cutoff90.toISOString().slice(0,10);
+  let exps=S.expenses.filter(e=>!e._del&&e.groupId===groupId&&e.date>=c90);
+  const setts=S.settlements.filter(s=>!s._del&&s.groupId===groupId);
+  const payload={v:'sk1',g:{id:g.id,name:g.name,emoji:g.emoji,color:g.color,members:g.members,currency:g.currency},
+    e:exps,s:setts,ts:Date.now()};
+  let compressed=LZString.compressToEncodedURIComponent(JSON.stringify(payload));
+  let dayLabel='90';
+  if(compressed.length>2600){
+    const cutoff30=new Date();cutoff30.setDate(cutoff30.getDate()-30);
+    exps=S.expenses.filter(e=>!e._del&&e.groupId===groupId&&e.date>=cutoff30.toISOString().slice(0,10));
+    compressed=LZString.compressToEncodedURIComponent(JSON.stringify({...payload,e:exps,_trim:'30d'}));
+    dayLabel='30';
+  }
+  if(compressed.length>2600){
+    const cutoff14=new Date();cutoff14.setDate(cutoff14.getDate()-14);
+    exps=S.expenses.filter(e=>!e._del&&e.groupId===groupId&&e.date>=cutoff14.toISOString().slice(0,10));
+    compressed=LZString.compressToEncodedURIComponent(JSON.stringify({...payload,e:exps,_trim:'14d'}));
+    dayLabel='14';
+  }
+  showModal(`<div class="modal-title">QR — ${g.name}</div>
     <div style="font-size:0.72rem;color:var(--text2);text-align:center;margin-bottom:10px">
-      Last ${dayLabel} days &nbsp;·&nbsp; ${exps.length} expenses &nbsp;·&nbsp; Scan with SplitKira on another device
+      Last ${dayLabel} days &nbsp;·&nbsp; ${exps.length} expenses &nbsp;·&nbsp; Scan with SplitKira on another phone
     </div>
-    <div id="qr-wrap" style="display:flex;justify-content:center;align-items:center;padding:12px;background:#fff;border-radius:14px;margin-bottom:12px"></div>
-    <div style="font-size:0.7rem;color:var(--text2);text-align:center;margin-bottom:10px">
-      ⚠️ Not encrypted — for immediate device-to-device use only
+    <div id="qr-wrap" style="display:flex;justify-content:center;padding:8px;background:#fff;border-radius:14px;margin-bottom:12px;min-height:260px;align-items:center">
+      <div id="qr-inner"></div>
+    </div>
+    <div style="font-size:0.7rem;color:var(--text2);text-align:center;margin-bottom:12px">
+      ⚠️ Not encrypted — use immediately, then close
     </div>
     <button class="btn btn-outline" onclick="closeModal()">Done</button>`);
+  // qrcodejs uses new QRCode(element, options) constructor
   setTimeout(()=>{
-    const wrap=document.getElementById('qr-wrap');
-    if(!wrap)return;
-    const canvas=document.createElement('canvas');
-    wrap.appendChild(canvas);
-    QRCode.toCanvas(canvas,compressed,{width:240,margin:1,color:{dark:'#0d0d1a',light:'#ffffff'}},err=>{
-      if(err)toast('QR too large — try exporting as encrypted backup instead','err',4000);
-    });
+    const el=document.getElementById('qr-inner');
+    if(!el)return;
+    try{
+      new QRCode(el,{
+        text:compressed,
+        width:248,height:248,
+        colorDark:'#0d0d1a',
+        colorLight:'#ffffff',
+        correctLevel:QRCode.CorrectLevel.M
+      });
+    }catch(err){
+      if(el)el.innerHTML='<div style="color:red;font-size:0.8rem;padding:10px">QR too large — try exporting as encrypted backup file instead</div>';
+    }
   },120);
 }
 
 // ═══════════════════════════════════════════════
-// QR SCAN — camera → jsQR → import
+// QR SCAN — camera → jsQR → match group → import
 // ═══════════════════════════════════════════════
 let _qrStream=null,_qrRaf=null;
 
 function showQRScan(){
-  if(typeof jsQR==='undefined'){toast('QR scanner not loaded — need internet first','err',4000);return;}
+  if(typeof jsQR==='undefined'){
+    toast('QR scanner not cached yet — open app while connected to internet first, then retry','err',5000);
+    return;
+  }
   showModal(`<div class="modal-title">Scan QR Code</div>
-    <div style="border-radius:14px;overflow:hidden;background:#000;margin-bottom:10px;position:relative;aspect-ratio:1">
+    <div style="border-radius:14px;overflow:hidden;background:#000;margin-bottom:10px;position:relative;aspect-ratio:1/1">
       <video id="qr-vid" style="width:100%;height:100%;object-fit:cover;display:block" playsinline muted></video>
       <canvas id="qr-canvas" style="display:none"></canvas>
       <div style="position:absolute;inset:0;pointer-events:none">
         <div style="position:absolute;top:20%;left:20%;right:20%;bottom:20%;border:2.5px solid var(--accent);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)"></div>
-        <div style="position:absolute;bottom:12px;width:100%;text-align:center;font-size:0.72rem;color:rgba(255,255,255,0.8)">Align QR code inside the box</div>
+        <div style="position:absolute;bottom:12px;width:100%;text-align:center;font-size:0.72rem;color:rgba(255,255,255,0.85)">Align SplitKira QR inside the box</div>
       </div>
     </div>
     <button class="btn btn-outline" onclick="_stopQRScan();closeModal()">Cancel</button>`);
-  setTimeout(_startQRScan,200);
+  setTimeout(_startQRScan,220);
 }
 
 async function _startQRScan(){
@@ -347,7 +384,7 @@ async function _startQRScan(){
     }
     _qrRaf=requestAnimationFrame(scan);
   }catch(e){
-    toast('Camera access denied. Enable in browser settings.','err',4000);
+    toast('Camera access denied — check browser settings','err',4000);
     closeModal();
   }
 }
@@ -359,17 +396,17 @@ function _stopQRScan(){
 
 function _processQRData(raw){
   try{
-    if(typeof LZString==='undefined')throw new Error('Compression library not loaded');
+    if(typeof LZString==='undefined')throw new Error('LZString not loaded');
     const json=LZString.decompressFromEncodedURIComponent(raw);
-    if(!json)throw new Error('Invalid QR data');
+    if(!json)throw new Error('Could not decompress QR data');
     const payload=JSON.parse(json);
-    if(payload.v!=='sk1')throw new Error('Not a SplitKira QR code');
+    if(payload.v!=='sk1')throw new Error('Not a SplitKira QR code (version mismatch)');
     showQRImportPreview(payload);
-  }catch(e){toast('Invalid QR — not a SplitKira code','err',3500);}
+  }catch(e){toast('Invalid QR — '+e.message,'err',4000);}
 }
 
 // ═══════════════════════════════════════════════
-// QR IMPORT — preview & confirm
+// QR IMPORT — preview matched group, confirm sync
 // ═══════════════════════════════════════════════
 function showQRImportPreview(payload){
   window._pendingQR=payload;
@@ -380,7 +417,7 @@ function showQRImportPreview(payload){
   const localGroups=S.groups.filter(g=>!g._del);
   const matchId=localGroups.find(l=>l.name.toLowerCase()===qg.name.toLowerCase())?.id||'';
   const localOpts=localGroups.map(l=>`<option value="${l.id}"${l.id===matchId?' selected':''}>${l.emoji||''} ${l.name}</option>`).join('');
-  const trimNote=payload._trimmed?`<div style="font-size:0.68rem;color:var(--warn);margin-top:3px">Last 30 days only (large dataset)</div>`:'';
+  const trimNote=payload._trim?`<div style="font-size:0.68rem;color:var(--warn);margin-top:3px">Limited to last ${payload._trim} (large dataset)</div>`:'';
   showModal(`<div class="modal-title">QR Sync</div>
     <div class="card" style="padding:12px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:10px">
@@ -413,11 +450,13 @@ function showQRImportPreview(payload){
 async function confirmQRImport(){
   const payload=window._pendingQR;
   if(!payload)return;
-  const targetId=document.getElementById('qr-target')?.value;
+  // SAME FIX: don't use || for empty string
+  const el=document.getElementById('qr-target');
+  const targetId=el!=null?el.value:'__skip__';
   if(targetId==='__skip__'){closeModal();return;}
-  if(targetId){
+  if(targetId){// non-empty = overwrite existing
     const lg=S.groups.find(l=>l.id===targetId);
-    if(!confirm('This will overwrite all data in "'+( lg?.name||'selected group')+'".\n\nContinue?'))return;
+    if(!confirm('This will overwrite all data in "'+(lg?.name||'selected group')+'".\n\nContinue?'))return;
   }
   closeModal();
   toast('Syncing...','info',2000);
@@ -426,5 +465,8 @@ async function confirmQRImport(){
     await _importGroupData(remotePayload,payload.g,targetId||null);
     toast('QR Sync complete ✅','ok',3500);
     S.activeGroupId=null;showNav(false);renderGroups();
-  }catch(e){toast('Sync failed: '+e.message,'err',4000);}
+  }catch(e){
+    console.error('QR sync error',e);
+    toast('Sync failed: '+e.message,'err',4000);
+  }
 }
